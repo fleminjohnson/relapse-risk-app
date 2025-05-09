@@ -7,7 +7,7 @@ from datetime import datetime
 # --- Secure login logic ---
 def check_password():
     def password_entered():
-        if st.session_state["password"] == "your-secret-password":  # <-- CHANGE THIS
+        if st.session_state["password"] == "Tornado1428!$@*":  # <-- CHANGE THIS
             st.session_state["authenticated"] = True
         else:
             st.session_state["authenticated"] = False
