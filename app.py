@@ -4,31 +4,79 @@ import pandas as pd
 import joblib
 from datetime import datetime
 
-# --- Secure login logic ---
+# --- 🛡️ LOGIN UI WITH ATTITUDE ---
 def check_password():
+    st.markdown(
+        """
+        <style>
+        .centered {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            font-family: 'Courier New', monospace;
+        }
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #00FFAA;
+            text-align: center;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #AAAAAA;
+            margin-bottom: 25px;
+            font-style: italic;
+            text-align: center;
+        }
+        .access-granted {
+            color: #00FF00;
+            font-weight: bold;
+            font-size: 18px;
+            text-align: center;
+        }
+        .access-denied {
+            color: #FF3333;
+            font-weight: bold;
+            font-size: 18px;
+            text-align: center;
+        }
+        </style>
+        <div class="centered">
+            <div class="title">🔐 Welcome, Operator</div>
+            <div class="subtitle">This space is private. Authentication required...</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
     def password_entered():
-        if st.session_state["password"] == "Tornado1428!$@*":  # <-- CHANGE THIS
+        if st.session_state["password"] == "Morce1428!$@*":  # <-- set your secret!
             st.session_state["authenticated"] = True
         else:
             st.session_state["authenticated"] = False
-            st.warning("😕 Incorrect password")
+            st.session_state["error_displayed"] = True
 
     if "authenticated" not in st.session_state:
-        st.text_input("🔐 Enter password", type="password", on_change=password_entered, key="password")
-        return False
-    elif not st.session_state["authenticated"]:
-        st.text_input("🔐 Enter password", type="password", on_change=password_entered, key="password")
-        return False
-    else:
-        return True
+        st.session_state["authenticated"] = False
+        st.session_state["error_displayed"] = False
 
-# --- Only show the app if password is correct ---
+    if not st.session_state["authenticated"]:
+        st.text_input("🕵️ Enter passphrase", type="password", on_change=password_entered, key="password", placeholder="••••••••••")
+
+        if st.session_state.get("error_displayed", False):
+            st.markdown('<div class="access-denied">🔴 Intruder Detected. You are not authorized.</div>', unsafe_allow_html=True)
+        return False
+
+    st.markdown('<div class="access-granted">🟢 Access Granted. Welcome back, Master.</div>', unsafe_allow_html=True)
+    return True
+
+# --- 🔓 Main App ---
 if check_password():
-    # Load model and features
     model = joblib.load("relapse_risk_model.pkl")
     features = joblib.load("relapse_risk_features.pkl")
 
-    # Hardcoded relapse contribution from each day of month
     relapse_day_contrib = {
         1: 0.021, 2: 0.022, 3: 0.025, 4: 0.032, 5: 0.038, 6: 0.045, 7: 0.021,
         8: 0.026, 9: 0.030, 10: 0.034, 11: 0.035, 12: 0.033, 13: 0.028, 14: 0.027,
@@ -37,11 +85,9 @@ if check_password():
         29: 0.042, 30: 0.044, 31: 0.015
     }
 
-    # Risk curve based on streak age
     def streak_weight(s):
         return 0.6 + 0.4 * (np.cos(np.pi * s / 10) ** 2)
 
-    # Core prediction function
     def predict_relapse_risk(date_str, streak_age):
         today = pd.to_datetime(date_str)
         day = today.day
