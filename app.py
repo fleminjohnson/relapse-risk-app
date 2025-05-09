@@ -3,12 +3,12 @@ import numpy as np
 import pandas as pd
 import joblib
 from datetime import datetime
+import time
 
 # Load model and features
 model = joblib.load("relapse_risk_model.pkl")
 features = joblib.load("relapse_risk_features.pkl")
 
-# Fake auth password
 APP_PASSWORD = "Morce1428!$@*"
 
 relapse_day_contrib = {
@@ -86,6 +86,9 @@ body {
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
+if "show_app" not in st.session_state:
+    st.session_state.show_app = False
+
 if not st.session_state.authenticated:
     st.markdown('<div class="lock-icon">🔐</div>', unsafe_allow_html=True)
     st.markdown('<h1 class="big-title">Welcome, Operator</h1>', unsafe_allow_html=True)
@@ -95,20 +98,26 @@ if not st.session_state.authenticated:
     if st.button("Unlock"):
         if pwd == APP_PASSWORD:
             st.session_state.authenticated = True
+            st.session_state.show_app = False
             st.rerun()
         else:
             st.error("🔴 Intrusion detected. Access denied, traitor.")
     st.stop()
 
+if st.session_state.authenticated and not st.session_state.show_app:
+    st.markdown('<h2 style="color: #00ff99; text-align: center;">🟢 Access Granted. Welcome back, Boss.</h2>', unsafe_allow_html=True)
+    time.sleep(2)
+    st.session_state.show_app = True
+    st.rerun()
+
 # --- Main App ---
-st.markdown('<h1 class="fade-in">🧠 Relapse Risk Predictor</h1>', unsafe_allow_html=True)
-st.success("🟢 Access Granted. Welcome back, Boss.")
+if st.session_state.show_app:
+    st.markdown('<h1 class="fade-in">🧠 Relapse Risk Predictor</h1>', unsafe_allow_html=True)
+    date = st.date_input("Select Date", value=datetime.today())
+    streak = st.number_input("Enter Current Streak Age", min_value=0, max_value=100, value=0)
 
-date = st.date_input("Select Date", value=datetime.today())
-streak = st.number_input("Enter Current Streak Age", min_value=0, max_value=100, value=0)
-
-if st.button("Predict"):
-    risk, base = predict_relapse_risk(str(date), streak)
-    st.success(f"📅 {date.strftime('%A, %d %B %Y')}")
-    st.markdown(f"🔥 **Adjusted Relapse Risk:** `{risk}%`")
-    st.caption(f"(Base model risk was {base}%)")
+    if st.button("Predict"):
+        risk, base = predict_relapse_risk(str(date), streak)
+        st.success(f"📅 {date.strftime('%A, %d %B %Y')}")
+        st.markdown(f"🔥 **Adjusted Relapse Risk:** `{risk}%`")
+        st.caption(f"(Base model risk was {base}%)")
